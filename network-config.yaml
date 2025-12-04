@@ -1,0 +1,55 @@
+#### network-config file - Centrailised TGW & Dedicated Tenant04 TGW - Multi REgion Multi Tenant ###########
+
+homeRegion: &HOME_REGION us-east-1
+#####################################
+# Delete default VPCs-- use this    #
+# object to delete default VPCs in  #
+# any non-excluded accounts         #
+#####################################
+defaultVpc:
+  delete: true
+  excludeAccounts: []
+
+##############################################
+# Transit Gateways- Region - us-east-1 - use #
+# this object to deploy transit gateways     #
+##############################################
+
+transitGateways:
+  - name: atos-pcsaws-dev-tgw01-us-east-1
+    account: Network
+    region: *HOME_REGION
+    shareTargets:
+      organizationalUnits:
+        - PCS
+        - Infrastructure
+    asn: 65521
+    dnsSupport: enable
+    vpnEcmpSupport: enable
+    defaultRouteTableAssociation: disable
+    defaultRouteTablePropagation: disable
+    autoAcceptSharingAttachments: enable
+    routeTables:
+    #### TGW Route tables ####
+      - name: Network-Main-Egress
+        routes: []
+#          - destinationCidrBlock: 0.0.0.0/0
+#            attachment:
+#              vpcName: atos-pcsaws-dev-vpc00-us-east-1
+#              account: Network
+#          - destinationCidrBlock: 10.0.0.0/8
+#            attachment:
+#              vpcName: atos-pcsaws-dev-vpc01-us-east-1
+#              account: Network              
+#        route for vpn subnet
+#           - destinationCidrBlock: 172.32.0.0/16
+#             attachment:
+#               vpnConnectionName: atos-pcsaws-dev-vpn01
+#        route for Direct Connect subnet
+#           - destinationCidrBlock: 172.31.0.0/16
+#             attachment:
+#               directConnectGatewayName: DevDx01EquitxUsEast1
+        tags:
+          - key: "AtosManaged"
+            value: "true"
+%!(EXTRA string=atos-pcsaws-network-config-c78tq)
