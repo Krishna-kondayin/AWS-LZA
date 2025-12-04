@@ -1,0 +1,438 @@
+# AWS Landing Zone Accelerator IAM Configuration
+policySets:
+  - deploymentTargets:
+      organizationalUnits:
+        - Root
+    policies:
+      - name: atos-pcsaws-cicd-iam-policy
+        policy: iam-policies/atos-pcsaws-cicd-iam-policy.json
+        
+###################################################################
+#####Customer Workload Accounts Customized Policy files######################
+###################################################################
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        - Infrastructure/Tnt0        
+  #      - Infrastructure/Tnt1
+  #      - Infrastructure/Tnt2
+        - Infrastructure/Tnt3
+        - Infrastructure/Tnt4
+    policies:
+      - name: CUSTOMER-AWS-BACKUP-SERVICE-IAM-POLICY
+        policy: iam-policies/customer-iam-role-backup-service-policy.json
+      - name: PCSAWS-OS-ADMIN-IAM-POLICY
+        policy: iam-policies/pcsaws-os-admin-iam-policy.json
+      - name: PCSAWS-RDS-ADMIN-IAM-POLICY
+        policy: iam-policies/pcsaws-rds-admin-iam-policy.json
+      - name: PCSAWS-EFS-ADMIN-IAM-POLICY
+        policy: iam-policies/pcsaws-efs-admin-iam-policy.json
+      - name: PCSAWS-EFS-READWRITE-IAM-POLICY
+        policy: iam-policies/pcsaws-efs-readwrite-ec2-console-iam-policy.json
+      - name: PCSAWS-FSX-READWRITE-IAM-POLICY
+        policy: iam-policies/pcsaws-fsx-readwrite-iam-policy.json
+      - name: PCSAWS-S3-ADMIN-IAM-POLICY
+        policy: iam-policies/pcsaws-s3-admin-iam-policy.json
+      - name: PCSAWS-S3-READWRITE-IAM-POLICY
+        policy: iam-policies/pcsaws-s3-readwrite-iam-policy.json
+#####################################################################
+#####Service and network account Customized Policy files#############
+#####################################################################
+  - deploymentTargets:
+      organizationalUnits:
+        - PCS
+        - Infrastructure
+        # - Infrastructure/Tnt0        
+        # - Infrastructure/Tnt1
+        # - Infrastructure/Tnt2
+    policies:
+      - name: PCSAWS-BACKUP-ADMIN-IAM-POLICY
+        policy: iam-policies/pcsaws-backup-admin-iam-policy.json
+      - name: PCSAWS-BACKUP-SERVICE-IAM-POLICY
+        policy: iam-policies/pcsaws-iam-role-backup-service-policy.json      
+
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        # - Infrastructure/Tnt0        
+        # - Infrastructure/Tnt1
+        # - Infrastructure/Tnt2
+      accounts:
+        - Network
+    policies:
+      - name: atos-pcsaws-discovery-users-iam-policy
+        policy: iam-policies/atos-pcsaws-discovery-user-policy.json
+
+######################################################
+#####IAM Roles configured for Root Organization#######
+######################################################
+roleSets:
+  - deploymentTargets:
+      organizationalUnits:
+        - Root
+    roles:
+      - name: atos-pcsaws-cicd-iam-role
+        description: PCS AWS CICD Role
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::846401656522:root'
+          - type: service
+            principal: 'cloudformation.amazonaws.com'
+          - type: service
+            principal: 'servicecatalog.amazonaws.com'
+          - type: service
+            principal: 'ec2.amazonaws.com'
+          - type: service
+            principal: 'codepipeline.amazonaws.com'
+        policies:
+          customerManaged:
+            - atos-pcsaws-cicd-iam-policy
+  
+######################################################
+#####IAM Roles configured in service account #######
+######################################################
+
+  - deploymentTargets:
+      accounts:
+        - Services
+    roles:
+      - name: AWSCloudFormationStackSetAdministrationRole
+        description: PCS AWS Stackset Admin Role
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::846401656522:root'
+          - type: service
+            principal: 'cloudformation.amazonaws.com'
+          - type: service
+            principal: 'codepipeline.amazonaws.com'
+        policies:
+          awsManaged:
+            - AdministratorAccess
+            - AmazonSSMFullAccess  
+
+######################################################
+#####IAM Roles configured in PCS Organization#######
+######################################################
+  - deploymentTargets:
+      organizationalUnits:
+        - PCS
+    roles:
+      - name: pcsaws-iam-role-backup-service
+        description: PCS AWS backup Role to manage backup and restore operations
+        assumedBy:
+          - type: service
+            principal: 'backup.amazonaws.com'
+        policies:
+          customerManaged:
+            - PCSAWS-BACKUP-SERVICE-IAM-POLICY
+            - PCSAWS-BACKUP-ADMIN-IAM-POLICY
+          awsManaged:
+            - service-role/AWSBackupServiceRolePolicyForBackup
+            - service-role/AWSBackupServiceRolePolicyForRestores
+            - AWSBackupOperatorAccess
+                
+################################################################
+#####IAM Roles configured in Audit and LogArchive account#######
+################################################################
+  - deploymentTargets:
+      accounts:
+        - Audit
+        - LogArchive
+    roles:
+      - name: Atos-Auditor-atostf
+        description: >-
+          This role is intended for use by Atos staff for review / auditing
+          purposes. Read only access to all services
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - ReadOnlyAccess
+      - name: Customer-Auditor-atostf
+        description: >-
+          This role is intended for use by customer staff for review / auditing
+          purposes.
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - ReadOnlyAccess
+            
+####################################################################################
+#####IAM Roles configured in Network and Services Accounts and Customer Organization##
+####################################################################################
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        # - Infrastructure/Tnt1
+        # - Infrastructure/Tnt2
+      accounts:
+        - Network
+        - Services
+    roles:
+      - name: atostf-Admin
+        description: >-
+          This role is intended for use by Customer staff for management
+          purposes. Read write access to all services
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+            
+##########################################################################
+#####IAM Roles configured in Services account and Customer Organization###
+##########################################################################
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        #- Infrastructure/Tnt0        
+        #- Infrastructure/Tnt1
+        #- Infrastructure/Tnt2
+      accounts:
+        - Services
+    roles:
+      - name: Atos-BackupAdmin-atostf
+        description: PCS AWS backup admin Role to manage backup resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          customerManaged:
+            - PCSAWS-BACKUP-ADMIN-IAM-POLICY
+            - PCSAWS-BACKUP-SERVICE-IAM-POLICY
+          awsManaged:
+            - service-role/AWSBackupServiceRolePolicyForBackup
+            - service-role/AWSBackupServiceRolePolicyForRestores
+            - AWSBackupOperatorAccess
+            
+################################################################
+#####IAM Roles configured in Customer Organization##############
+################################################################
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        - Infrastructure/Tnt0        
+    #    - Infrastructure/Tnt1
+    #    - Infrastructure/Tnt2
+        - Infrastructure/Tnt3
+        - Infrastructure/Tnt4
+    roles:
+      - name: customer-iam-role-backup-service
+        description: Customer AWS backup Role to manage backup and Restore with Backp Service permissions in resource account
+        assumedBy:
+          - type: service
+            principal: 'backup.amazonaws.com'
+        policies:
+          customerManaged:
+            - CUSTOMER-AWS-BACKUP-SERVICE-IAM-POLICY
+          awsManaged:
+            - service-role/AWSBackupServiceRolePolicyForBackup
+            - service-role/AWSBackupServiceRolePolicyForRestores
+            - AWSBackupServiceRolePolicyForS3Backup
+            - AWSBackupServiceRolePolicyForS3Restore
+            - AWSBackupOperatorAccess
+      - name: Atos-OSAdmin-Dev
+        description: PCS AWS OS admin Role to manage EC2 resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AWSSupportAccess
+          customerManaged:
+            - PCSAWS-OS-ADMIN-IAM-POLICY
+      - name: Atos-RDSAdmin-Dev
+        description: DCS AWS RDS admin Role to manage RDS resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AWSSupportAccess
+          customerManaged:
+            - PCSAWS-RDS-ADMIN-IAM-POLICY          
+      - name: Atos-EFSAdmin-Dev
+        description: DCS AWS EFS admin Role to manage EFS resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AWSSupportAccess
+            - AmazonElasticFileSystemFullAccess
+          customerManaged:
+            - PCSAWS-EFS-ADMIN-IAM-POLICY        
+      - name: Atos-EFSReadOnly-Dev
+        description: Customer EFS ReadOnlyAccess Role to manage EFS resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AmazonElasticFileSystemReadOnlyAccess
+      - name: Atos-EFSClientReadWrite-Dev
+        description: Customer EFS ReadWriteAccess Role to manage EFS resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AmazonElasticFileSystemClientReadWriteAccess      
+      - name: Atos-EFSUserReadWrite-Dev
+        description: PCS AWS EFS ClientReadWriteAccess along with EC2 Console access Role to manage EFS resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          customerManaged:
+            - PCSAWS-EFS-READWRITE-IAM-POLICY
+      - name: Atos-FsxAdmin-Dev
+        description: DCS AWS Fsx admin Role to manage Fsx resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AWSSupportAccess
+            - AmazonFSxConsoleFullAccess
+            - AmazonFSxFullAccess         
+      - name: Atos-FsxReadOnly-Dev
+        description: Customer Fsx ReadOnlyAccess Role to manage FSX resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AmazonFSxConsoleReadOnlyAccess
+            - AmazonFSxReadOnlyAccess
+      - name: Atos-FsxReadWrite-Dev
+        description: Customer Fsx ReadWriteAccess Role to manage Fsx resources by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          customerManaged:
+            - PCSAWS-FSX-READWRITE-IAM-POLICY
+      - name: Atos-S3ReadOnly-Dev
+        description: Customer S3 ReadOnlyAccess Role to manage S3 buckets by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AmazonS3ReadOnlyAccess
+      - name: Atos-S3ReadWrite-Dev
+        description: Customer S3 ReadWriteAccess Role to manage S3 buckets by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          customerManaged:
+            - PCSAWS-S3-READWRITE-IAM-POLICY
+      - name: Atos-S3Admin-Dev
+        description: Customer S3 AdministratorAccess Role to manage S3 buckets by the Operations
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AWSSupportAccess
+            - AmazonS3FullAccess
+          customerManaged:
+            - PCSAWS-S3-ADMIN-IAM-POLICY            
+
+#COMMON ROLES
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        # - Infrastructure/Tnt0        
+        # - Infrastructure/Tnt1
+        # - Infrastructure/Tnt2
+      accounts:
+        - Management
+        - Audit
+        - LogArchive
+        - Network
+        - Services
+    roles:
+      - name: Atos-DevOpsAdmin
+        description: >-
+          This role is intended for use by Atos staff for management purposes.
+          Read write access to all services
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - AdministratorAccess
+            - AWSSupportAccess
+      - name: Atos-DevOpsEngineer
+        description: >-
+          This role is used by the PCS team for day to day activities outside of
+          the automation, to manage the customer environment.
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - ReadOnlyAccess
+            - AWSSupportAccess
+      - name: Atos-FinOps
+        description: This role is used by the PCS team for financial administration.
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - job-function/Billing
+      - name: Customer-FinOps
+        description: >-
+          This role is used by the customer team for financial administration,
+          where the customer retains billing control.
+        assumedBy:
+          - type: account
+            principal: 'arn:aws:iam::861491417048:root'
+        policies:
+          awsManaged:
+            - job-function/Billing
+
+################################################################
+#####Group Sets configured in Network and Customers OU##########
+################################################################
+groupSets:
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        # - Infrastructure/Tnt0        
+        # - Infrastructure/Tnt1
+        # - Infrastructure/Tnt2
+      accounts:
+        - Network
+    groups:
+      - name: atos-pcsaws-discovery-users
+        policies:
+          awsManaged:
+            - ReadOnlyAccess
+          customerManaged:
+            - atos-pcsaws-discovery-users-iam-policy
+            
+################################################################
+######User Sets configured in Network and Customers OU##########
+################################################################
+userSets:
+  - deploymentTargets:
+      accounts:
+        - Network
+    users:
+      - username: atos-pcsaws-discovery-user
+        group: atos-pcsaws-discovery-users
+  - deploymentTargets:
+      organizationalUnits:
+        - Infrastructure
+        # - Infrastructure/Tnt0        
+        # - Infrastructure/Tnt1
+        # - Infrastructure/Tnt2
+    users:
+      - username: atos-pcsaws-discovery-user
+        group: atos-pcsaws-discovery-users
